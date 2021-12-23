@@ -11,3 +11,7 @@ Creating a program to play around with Twizzler
 3) Start writing code in foo.c; this file will be automatically compiled into a program called 'foo'
 and placed in usr/bin in the sysroot.
 
+4) Rebuild Twizzler image by doing the following: 
+In /build/ directory
+   - ninja boot.iso
+
