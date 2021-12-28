@@ -3,45 +3,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-/* access to the twizzler object API */
-#include <twz/alloc.h>
-#include <twz/meta.h>
-#include <twz/name.h>
-#include <twz/obj.h>
-#include <twz/ptr.h>
-
 /* Header files for Memory Access*/
 int main(int argc, char **argv){
-
-	printf("Hello, World!\n");
-
 	//return int
 	int c;
 
 	char *input = argv[1];
 	FILE *input_file; 
 
-	char* templine[90];
+	char templine[40];
 
-	//Open file passwed as first argument
-	input_file = fopen(input)
+	//Open file passed as first argument
+	input_file = fopen(input,"r");
 
 	if(input_file == 0){
 		// error
 		exit(-1);
 	}
 	else{
+		char tconst[9];
+		float averageRating;
+		int numVotes;
+		
+		//Discards collumn name
+		fgets(templine,40,input_file);
+
 		while((c = fgetc(input_file)) != EOF){
 		
+		fgets(templine,40,input_file);
+		sscanf(templine,"%s %f %d", tconst, &averageRating, &numVotes);
 
-		fgets(,,)
 
+		printf("%s %9.6f %d\n", tconst,averageRating,numVotes);
 		}
 	}
-
-
-
-
 	return 0;
 }
+
