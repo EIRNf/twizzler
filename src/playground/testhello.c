@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Header files for Memory Access*/
+
+// Ingestion code to read raw data 
 int main(int argc, char **argv){
-	//return int
 	int c;
 
 	char *input = argv[1];
@@ -21,7 +21,7 @@ int main(int argc, char **argv){
 		exit(-1);
 	}
 	else{
-		char tconst[9];
+		char tconst[9]; //char array for id
 		float averageRating;
 		int numVotes;
 		
