@@ -15,14 +15,14 @@
 
 // Hash Table Struct, try using as Twizzler Object header
 typedef struct {
-	htItem **items; // Array of pointers to items
+	htItem *items[NUM_BUCKETS]; // Array of pointers to items
 	int size;
 	int count;
 } hashTable;
 
 // Hash Table Item/ Primary Index Key/Value Pair
 typedef struct {
-	char *tconst;
+	char tconst;
 	struct titleRatings *value;
 } htItem;
 
@@ -94,10 +94,22 @@ twzobj *createTable()
 }
 
 // create item. Allocates directly from an already existing HT object
-htItem *create_item(twzobj obj, char *key, char *value)
+htItem *create_item(twzobj obj, void *key, void *value)
 {
-  hashTable *htHdr = twz_object_base(&obj);
-	htItem items = twz_alloc(&obj, 8, &htHdr->items, 0, NULL, NULL);
+     
+     hashTable *htHdr = twz_object_base(&obj);
+     //0 if succseful
+    int r = twz_alloc(&obj, sizeof(htItem), &htHdr->items[0], 0, NULL, NULL);
+    printf("Allocated: %d %p\n", r, htHdr->items[0]);
+
+    //V should now be a pointer to the newly allocated object
+    void *v = twz_object_lea(&obj,htHdr->items[0]);
+
+	htItem* tempItem = (htItem*) v;
+
+	tempItem->tconst = (char*) key;
+	tempItem->value = (titleRatings*) value;
+
 }
 // free item
 // free table
