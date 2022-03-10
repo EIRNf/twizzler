@@ -14,10 +14,10 @@
 #include <twz/obj.h>
 #include <twz/ptr.h>
 
-#include "appendStore.h"
+#include "arrayStore.h"
 
 /* Macros */
-//332
+//331
 #define DEFAULT_ORDER 3
 #define MIN_ORDER 3
 #define MAX_ORDER 20
@@ -52,7 +52,7 @@ int path_to_root(node * const root, node * child);
 node * make_node();
 node * make_leaf();
 node * find_leaf(int key);
-void *  find_record(int key);
+int find_record(int key);
 record * make_record(char name[20],int age, int sal);
 void print_node(node * test);
 void print_tree();
@@ -76,7 +76,8 @@ int main(int argc, char **argv)
 {
 
     twzobj datao;
-    appendDatastore_init(&datao);
+    // appendDatastore_init(&datao);
+	arrayDatastore_init(&datao);
 
 	twzobj dataObj; 
 	tree_init(&dataObj);
@@ -86,9 +87,13 @@ int main(int argc, char **argv)
 
 	bulk_generation();
 
-	appendDatastore_printRecord(&datao,find_record(2));
-	appendDatastore_printRecord(&datao,find_record(7));
-	appendDatastore_printRecord(&datao,find_record(12));
+	arrayDatastore_printRecord(find_record(2));
+	arrayDatastore_printRecord(find_record(6));
+	arrayDatastore_printRecord(find_record(7));
+	arrayDatastore_printRecord(find_record(8));
+
+
+
 	return 0;
 }
 
@@ -112,7 +117,8 @@ tree_hdr * bulk_generation(){
 	for(int i = 0; i < numElements; i++){
 		//int k = i | (int) 0 << 16;
 		insert(i, (void*) make_record("tempName",i,i*i));
-			// printf("_____________________________________________________\n");
+			// 			printf("_____________________________________________________\n");
+
 			// print_tree();
 
 	}
@@ -143,6 +149,45 @@ tree_hdr * bulk_generation(){
 	Experiment :
 		Random sorted data
 	*/
+
+	//Future experiments
+		//Index extension
+		//Storage extension
+
+
+	// printf("%d\n", __LINE__);
+	// for(int i = 0; i < numElements; i++){
+	// 	//int k = i | (int) 0 << 16;
+	// 	// printf("%d\n", __LINE__);
+
+	// 	print_node(find_leaf(i));
+	// }
+
+
+	// //make full leaf node
+	// node * tempFullLeaf = make_leaf();
+
+	// int maxNodeSize = DEFAULT_ORDER ;
+
+	// int incrementId = 0;
+	// //make max records for leaf node
+	// int i;
+	// for(i = 0; i < maxNodeSize; i++){
+	// 	int k = i | (int)incrementId << 8;
+	// 	tempFullLeaf->keys[i] = k;  //Bit
+	// 	tempFullLeaf->pointers[i] = (void*) make_record("tempName",k,k*k); // dummy record to check secondary indexing
+	// }
+	// tempFullLeaf->num_keys = i;
+
+	// print_node(tempFullLeaf);
+	// //split if reached max size
+	// rootNode->keys[incrementId] = tempFullLeaf->keys[maxNodeSize - 1];
+	// rootNode->pointers[incrementId] = tempFullLeaf;
+		
+	// incrementId++;
+
+	//make parent, give it pointers to two new children, parent is root, propagate slpite up tree
+
 	return hdr;
 }
 
@@ -223,8 +268,12 @@ node * dequeue(void) {
 
 //Assume no duplicates, returns pointer to node
 node * find_leaf(int key){
+	// printf("%s\n",__func__);
+	// printf("%d\n",key);
+
 
 	node * currentNode = (node *) hdr->root;
+
 
 	//Navigate Tree
 	while(!(currentNode->is_leaf)){
@@ -238,6 +287,18 @@ node * find_leaf(int key){
 		} // if key < every other value will follow left most pointerfind
 		currentNode = (node *) currentNode->pointers[i];
 
+		// for(int i = 0; i < currentNode->num_keys; i++){
+		// 	 if (key < currentNode->keys[i]){
+		// 		//Only applies for navigate nodes, otherwise p_pointers screw things up
+		// 		currentNode = currentNode->pointers[i];
+		// 	 }
+		// 	 else if (key == currentNode->keys[i]){
+		// 		currentNode = currentNode->pointers[i+1];
+		// 	 }
+		// 	 else {
+
+		// 	 }
+		// }
 	}
 	//Current Node is leaf
 	for(int i = 0; i < currentNode->num_keys; i++){
@@ -247,25 +308,32 @@ node * find_leaf(int key){
 			return currentNode;
 		}
 	}
+	// printf("currentNode:\n");
+	// print_node(currentNode);
+
 	return currentNode;
 }
 
-void * find_record(int key){
+int find_record(int key){
 
 	node * leafNode = find_leaf(key);
 	//redundant work is being done
 	for(int i = 0; i < DEFAULT_ORDER; i++){
 		if(key == leafNode->keys[i]){
 			//We've found the p_pointer 
-			return leafNode->pointers[i];
+			//return (void *) twz_object_lea(bTreeObject, leafNode->pointers[i]);
+			//printf("pointer: %p");
+			return leafNode->keys[i];
 		}
 	}
-	return NULL;
+	return 0;
 
 }
 
 void insert (int key, void * recordPointer){
-		node * d_insertNode;
+	// printf("%s\n",__func__);
+
+	node * d_insertNode;
 	if(hdr->root == NULL){// if no root create an empty leaf node L, which is also the root
 		//Make root if it doesnt exist
 		node * rootNode = make_leaf(); 
@@ -286,14 +354,17 @@ void insert (int key, void * recordPointer){
 		int * tempChildKeys = calloc((DEFAULT_ORDER), sizeof(int)); 
 		void ** tempChildPointers =  calloc((DEFAULT_ORDER), sizeof(node *));
 
-			//Insert key into temp arrays in order to make sure split occurs correctly
+		//Copy over keys and pointers to temp location
+		// memcpy(tempKeys,d_insertNode->keys, DEFAULT_ORDER +1 );
+		// memcpy(tempPointers,d_insertNode->pointers, DEFAULT_ORDER+1);
+
+		//Insert key into temp arrays in order to make sure split occurs correctly
 		int i, insertionPoint;
 		insertionPoint = 0;
 		//TODO
 		while(insertionPoint < DEFAULT_ORDER - 1 && d_insertNode->keys[insertionPoint] < key){
 			insertionPoint++;
 		}
-		//Calculate where to split the node into two
 		int j;
 		for (i = 0, j = 0; i < d_insertNode->num_keys; i++, j++) {
 			if (j == insertionPoint) j++;
@@ -304,6 +375,8 @@ void insert (int key, void * recordPointer){
 		tempChildKeys[insertionPoint] = key;
 		tempChildPointers[insertionPoint] = recordPointer;
 
+		// d_insertNode->keys[insertionPoint] = key;
+		// d_insertNode->pointers[insertionPoint] = recordPointer;
 		d_insertNode->num_keys = 0;
 
 		int split = cut(DEFAULT_ORDER);
@@ -312,7 +385,9 @@ void insert (int key, void * recordPointer){
 		newNode->pointers[DEFAULT_ORDER-1] = d_insertNode->pointers[DEFAULT_ORDER-1];
 		d_insertNode->pointers[DEFAULT_ORDER-1] = newNode;
 
-		
+		//Calculate where to split the node into two
+
+		// printf("split: %d\n", split);
 		//Erase values in old array
 		for(i =0; i < DEFAULT_ORDER; i++){
 			d_insertNode->keys[i]= 0;
@@ -333,15 +408,21 @@ void insert (int key, void * recordPointer){
 			newNode->num_keys++;
 		}
 
+				// printf("%d\n", __LINE__);
+
+
 		free(tempChildKeys);
 		free(tempChildPointers);
 
 		//Right most pointer for scan
 		d_insertNode->pointers[DEFAULT_ORDER] = newNode;
+					// printf("%d\n", __LINE__);
+
 
 		newNode->parent = d_insertNode->parent;
 		//Promote up
 		int newKey = newNode->keys[0];
+		// printf("newKey: %d", newKey);
 		insert_in_parent(d_insertNode,newKey,newNode);
 	}	
 }
@@ -350,6 +431,8 @@ void insert (int key, void * recordPointer){
  * split a node that is too big into two.
  */
 int cut(int length) {
+	// printf("%s\n",__func__);
+
 
 	if (length % 2 == 0)
 		return length/2;
@@ -358,6 +441,19 @@ int cut(int length) {
 }
 
 void insert_in_parent(node * oldNode, int newKey, node * newNode){
+		printf("%s\n",__func__);
+
+		// printf("%s\n",__func__);
+		// printf("%d\n", __LINE__);
+
+	// printf("Old node:\n");
+	// print_node(oldNode);
+	// printf("New node:\n");
+	// print_node(newNode);
+	// printf("Root node:\n");
+	// print_node( hdr->root );
+	// 	printf("%d\n", __LINE__);
+
 	if(oldNode->parent == NULL){
 		//Base root case, raises height of tree, oldNode has to be old root
 				// printf("%d\n", __LINE__);
@@ -402,14 +498,43 @@ void insert_in_parent(node * oldNode, int newKey, node * newNode){
 		insert_in_node(oldParent,oldNodePos,newKey,newNode);
 	}
 	else {
-		int * tempKeys = calloc((DEFAULT_ORDER), sizeof(int)); 		
-		void ** tempPointers =  calloc((DEFAULT_ORDER+1), sizeof(node *));
 		
+
+		printf("%s\n", "inserting into parent");
+
+		int * tempKeys = calloc((DEFAULT_ORDER), sizeof(int)); 
+		void ** tempPointers =  calloc((DEFAULT_ORDER+1), sizeof(node *));
+		// printf("%d\n", __LINE__);
+
+
+		// for(i = 0; i < DEFAULT_ORDER;i++){
+		// 	printf("tempkeys: %d, %d\n", i,tempKeys[i]);
+		// }
+		// for(i = 0; i < DEFAULT_ORDER+1;i++){
+		// 	printf("tempPointers: %d, %p\n", i,tempPointers[i]);
+		// }
+ 
+
+		//Copy over keys and pointers to temp location
+		// memcpy(tempKeys,oldNode->keys, DEFAULT_ORDER );
+		// memcpy(tempPointers,oldNode->pointers, DEFAULT_ORDER+1);
+
+		//Insert key into temp arrays in order to make sure split occurs correctly
+		//Insert rigth after 
+		// int i,j, insertionPoint;
+		// insertionPoint = 0;
+		// while(insertionPoint < DEFAULT_ORDER - 1  && oldNode->keys[insertionPoint] < oldNodePos){
+		// 	insertionPoint++;
+		// }
+		// for (i = insertionPoint; i < DEFAULT_ORDER; i++ ){
+		// 	tempKeys[i+1]=oldNode->keys[i];
+		// 	tempPointers[i+1]=oldNode->pointers[i];
+		// }
 
 		//We are copying the Pointers and Keys from the Previous Parent
 		//with the new Key to the Temp arrays,OldNodePos holds the index
 		//of Key for oldChildNode, OldNodePos+1 points to its pointer
-
+		// printf("oldNodePos:%d,newkey:%d\n",oldNodePos,newKey);
 		int h,k,insertKeyPos;
 		for(h = 0; h <= DEFAULT_ORDER+1; h++){
 			if (h == oldNodePos +1){ // This is were the pointer would be inserted
@@ -422,8 +547,7 @@ void insert_in_parent(node * oldNode, int newKey, node * newNode){
 				tempPointers[h+1] = oldParent->pointers[h];
 			}
 		}
-
-
+		
 		for(k = 0; k <= DEFAULT_ORDER; k++){
 			if (k == oldNodePos){ // This is were the key would be inserted
 				tempKeys[k] = newKey;
@@ -435,27 +559,66 @@ void insert_in_parent(node * oldNode, int newKey, node * newNode){
 				tempKeys[k+1] = oldParent->keys[k];
 			}
 		}
+		// tempKeys[insertionPoint] = newKey;
+		// tempPointers[insertionPoint+1] = newNode;
 
 
 		int i,j, insertionPoint;
+		// printf("j:%d,oldNodePos:%d\n", j, oldNodePos);
+		// for (i = 0, j = 0; i < oldParent->num_keys + 1; i++, j++) {
+		// if (j == oldNodePos + 1) j +=1 ;
+		// 	// printf("j:%d,oldNodePos:%d\n", j, oldNodePos);
+		// 	printf("j:%d\n", j);
+		// 	tempPointers[j] = oldParent->pointers[i];
+		// }
+		// 				printf("%d\n", __LINE__);
+		// for (i = 0, j = 0; i < oldParent->num_keys; i++, j++) {
+		// 	if (j == oldNodePos + 1) {
+		// 		// printf("j:%d,oldNodePos:%d\n", j, oldNodePos);
+		// 		printf("j:%d\n", j);
+		// 		insertionPoint = j;
+		// 		j += 1;
+		// 	} 
+		// //printf("j:%d\n", j);
+		// tempKeys[j] = oldParent->keys[i];
+	    // }
+		// 				printf("%d\n", __LINE__);
+// printf("%d\n", __LINE__);
+
+		//printf("j:%d\n", j);
+		// printf("insertion point: %d\n", insertionPoint);
+		// tempKeys[insertionPoint] = newKey;
+		// tempPointers[insertionPoint+1] = newNode;
+
 		//Calculate where to split the node into two
 		int split = cut(DEFAULT_ORDER );
 
+		//Erase values in old array
+		// for(i =0; i < DEFAULT_ORDER-1; i++){
+		// 	oldNode->keys[i]= 0;
+		// 	oldNode->pointers[i] = NULL;			
+		// }
+// printf("%d\n", __LINE__);
 		//Make a new parent node
 		node * newParent = make_node();
 		oldParent->num_keys = 0;
-		
 
-
+		// for(i = 0; i < DEFAULT_ORDER;i++){
+		// 	printf("tempkeys: %d, %d\n", i,tempKeys[i]);
+		// }
+		// for(i = 0; i < DEFAULT_ORDER+1 ;i++){
+		// 	printf("tempPointers: %d, %p\n", i,tempPointers[i]);
+		// }
+// printf("%d\n", __LINE__);
 		// Copy T.K0P0 to TK(n/2)P(n/2) into original node
 		for(i =0; i < split; i++){
 			oldParent->keys[i]= tempKeys[i];
 			oldParent->pointers[i] = tempPointers[i];				
 			oldParent->num_keys++;
 		}
-
 		oldParent->pointers[i] = tempPointers[i];		
 		int newKey = tempKeys[split];
+// printf("%d\n", __LINE__);
 		// Copy T.K(n/2)+1P(n/2)+1 to T.KnPn
 		i += 1; 
 		for (j = 0; i < DEFAULT_ORDER; i++, j++){
@@ -464,21 +627,21 @@ void insert_in_parent(node * oldNode, int newKey, node * newNode){
 			newParent->num_keys++;
 		}
 
-
 		newParent->pointers[j] = tempPointers[i];
 		newParent->parent = oldParent->parent;
 		// free(tempKeys);
 		// free(tempPointers);
 		//Update parent references in children to point to the right one
-				
-
 		node * tempNode;
+
 		for (i = 0; i <= newParent->num_keys; i++) {
 			tempNode = newParent->pointers[i];
+			// printf("tempNode node:\n");
+			// print_node( tempNode);
 			tempNode->parent = newParent;
 		}
 
-
+		//Promote up
 		insert_in_parent(oldParent,newKey,newParent);
 	}
 
@@ -489,6 +652,12 @@ void insert_in_parent(node * oldNode, int newKey, node * newNode){
 void insert_in_node(node * oldParent, int oldNodePos, int key, node * newNode){
 
 	int i;
+
+	// insertionPoint = 0;
+
+	// // while(insertionPoint < oldParent->num_keys && leafNode->keys[insertionPoint] < key){
+	// // 	insertionPoint++;
+	// // }
 
 
 	for (i = oldParent->num_keys; i > oldNodePos; i-- ){
@@ -551,12 +720,14 @@ record * make_record(char name[20],int age, int sal) {
 	newRecord->age = age;
     newRecord->sal = sal;
 
-	void * d_recordPointer;
-    appendDatastore_addRecord(newRecord, &d_recordPointer); 
+	void * d_recordPointer = NULL;
+    // appendDatastore_addRecord(newRecord, &d_recordPointer); 
+
+	arrayDatastore_addRecord(newRecord,age);
 
 	//Swizzle, take d pointer from storage and make a p pointer
-	record * p_recordPointer = twz_ptr_swizzle(bTreeObject, d_recordPointer, FE_READ | FE_WRITE);
-	return p_recordPointer;
+	// record * p_recordPointer = twz_ptr_swizzle(bTreeObject, d_recordPointer, FE_READ | FE_WRITE);
+	return d_recordPointer;
 }
 
 
@@ -581,6 +752,8 @@ node *make_node() {
 		d_newNode->pointers[i] = NULL;
 	}
 	
+	// d_newNode->keys[0]; // Keys array, no dynamic allocation
+	// d_newNode->pointers[0];
 	d_newNode->num_keys = 0;
 	d_newNode->is_leaf = false;
 	d_newNode->num_keys = 0;

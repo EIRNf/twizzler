@@ -76,6 +76,23 @@ void appendDatastore_init(twzobj *dataObj){
     //v->end = twz_ptr_local(hdr + 1); 
     
     //We should now have a pointer in the header to where we can begin to add data
+
+    //   struct appendDatastore_hdr *hdr = twz_object_base(appendDatastore); 
+
+    // printf("hdrRecordCount: %d\n", hdr->recordCount);
+    // printf("hdrEndPointer: %p\n", hdr->end);
+
+    // struct record rowOne = {"john", 20, 1000};
+    // void *rowOnePointer;
+
+    // appendDatastore_addRecord(&rowOne, &rowOnePointer);
+    // appendDatastore_printRecord(dataObj,rowOnePointer);
+
+    // printf("rowOnePointer: %p\n", rowOnePointer);
+    // printf("hdrRecordCount: %d\n", hdr->recordCount);
+    // printf("hdrEndPointer: %p\n", hdr->end);
+
+
 }
 
 //Feed a record of data and a temp pointer** to store persistant poitner to data
@@ -93,10 +110,10 @@ void appendDatastore_addRecord (record *row, void** row_pointer) {
 
     // New end pointer points at location of prev end pointer plus length of record
     hdr->end = (void *) ((uintptr_t) hdr->end +  sizeof(record));
-
+    
+    // printf("row:",);
     //load a d-pointer from the persistent pointer
     record *newRow = twz_object_lea(appendDatastore, endPointer); 
-
     //Remember pointer being used
     twz_ptr_store_guid(
         appendDatastore,
@@ -113,7 +130,10 @@ void appendDatastore_addRecord (record *row, void** row_pointer) {
 
 //Feed persistant pointer and print its values
 void appendDatastore_printRecord(twzobj * obj, void *row_pointer){    
+    printf("rowPointer: %p\n", row_pointer);
     struct record *row = twz_object_lea(obj, row_pointer); 
+    printf("row: %p\n", row);
+
 
     printf("Name: %s\n", row->name);
     printf("Age: %d\n", row->age);
@@ -138,20 +158,20 @@ int main(int argc, char **argv){
     twzobj datao;
     appendDatastore_init(&datao);
 
-    // struct appendDatastore_hdr *hdr = twz_object_base(appendDatastore); 
+    struct appendDatastore_hdr *hdr = twz_object_base(appendDatastore); 
 
-//     printf("hdrRecordCount: %d\n", hdr->recordCount);
-//     printf("hdrEndPointer: %p\n", hdr->end);
+    printf("hdrRecordCount: %d\n", hdr->recordCount);
+    printf("hdrEndPointer: %p\n", hdr->end);
 
-//     struct record rowOne = {"john", 20, 1000};
-//     void *rowOnePointer;
+    struct record rowOne = {"john", 20, 1000};
+    void *rowOnePointer;
 
-//     appendDatastore_addRecord(&rowOne, &rowOnePointer);
-//     appendDatastore_printRecord(rowOnePointer);
+    appendDatastore_addRecord(&rowOne, &rowOnePointer);
+    appendDatastore_printRecord(&datao,rowOnePointer);
 
-//     printf("rowOnePointer: %p\n", rowOnePointer);
-//     printf("hdrRecordCount: %d\n", hdr->recordCount);
-//     printf("hdrEndPointer: %p\n", hdr->end);
+    printf("rowOnePointer: %p\n", rowOnePointer);
+    printf("hdrRecordCount: %d\n", hdr->recordCount);
+    printf("hdrEndPointer: %p\n", hdr->end);
 
 //     struct record rowTwo = {"sally", 25, 2000};
 //     void *rowTwoPointer;
@@ -180,5 +200,4 @@ int main(int argc, char **argv){
 //     printf("hdrRecordCount: %d\n", hdr->recordCount);
 //     printf("hdrEndPointer: %p\n", hdr->end);
 }
-
 */

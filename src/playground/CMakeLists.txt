@@ -8,10 +8,16 @@ project(twzplayground VERSION 0.1 DESCRIPTION "Twizzler Testing")
 # add_executable(appendStore appendStore.c)
 # install(TARGETS appendStore DESTINATION bin)
 
+#add_executable(arrayStore arrayStore.c)
+#install(TARGETS arrayStore DESTINATION bin)
+
 add_executable(bPlusTree bPlusTree.c appendStore.c)
 target_compile_options(bPlusTree PUBLIC -ggdb)
 install(TARGETS bPlusTree DESTINATION bin)
 
+add_executable(bPlusTreeArray bPlusTreeArray.c arrayStore.c)
+target_compile_options(bPlusTreeArray PUBLIC -ggdb)
+install(TARGETS bPlusTreeArray DESTINATION bin)
 
 add_executable(testhello testhello.c)
 install(TARGETS testhello DESTINATION bin)
